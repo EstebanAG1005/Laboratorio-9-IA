@@ -1,58 +1,57 @@
-import gymnasium as gym
 import numpy as np
-import random
+import gym
 from gymnasium.envs.toy_text.frozen_lake import generate_random_map
 
-map_size = 4
-env = gym.make('FrozenLake-v1', desc=generate_random_map(size=map_size), is_slippery=True)
+# Create the FrozenLake environment
+env = gym.make('FrozenLake-v1', desc=generate_random_map(size=8), is_slippery=True)
 
-q_table = np.zeros((env.observation_space.n, env.action_space.n))
+# Initialize the Q-table
+q_table = np.zeros([env.observation_space.n, env.action_space.n])
 
-alpha = 0.1  # learning rate
-gamma = 0.99  # discount factor
-epsilon = 1.0  # exploration rate
-max_epsilon = 1.0
-min_epsilon = 0.01
-decay_rate = 0.001  # exponential decay rate for exploration probability
-
-num_episodes = 50000
+# Hyperparameters
+alpha = 0.1  # Learning rate
+gamma = 0.99  # Discount factor
+epsilon = 0.1  # Exploration rate
+num_episodes = 10000
 
 for episode in range(num_episodes):
     state = env.reset()
     done = False
 
     while not done:
-        if random.uniform(0, 1) < epsilon:
-            action = env.action_space.sample()  # explore
+        # Choose action: epsilon-greedy
+        if np.random.uniform(0, 1) < epsilon:
+            action = env.action_space.sample()
         else:
-            action = np.argmax(q_table[state, :])  # exploit
-
-        next_state, reward, done, _, info = env.step(action)
-        next_state = int(next_state)  # Updated line
-
-        # Update Q-table
-        q_table[state, action] = q_table[state, action] + alpha * (reward + gamma * np.max(q_table[next_state, :]) - q_table[state, action])
-
-        state = int(env.reset())
+            action = np.argmax(q_table[int(state)])
 
 
-    # Decay exploration rate
-    epsilon = min_epsilon + (max_epsilon - min_epsilon) * np.exp(-decay_rate * episode)
+        # Take the action
+        next_state, reward, done, info = env.step(action)
 
-num_test_episodes = 5
+        # Update the Q-table
+        q_value = q_table[state, action]
+        next_q_value = np.max(q_table[next_state])
+        new_q_value = q_value + alpha * (reward + gamma * next_q_value - q_value)
+        q_table[state, action] = new_q_value
 
+        state = next_state
+
+# Test the learned policy
+num_test_episodes = 100
+successes = 0
 for episode in range(num_test_episodes):
     state = env.reset()
     done = False
-    print(f"Episode {episode + 1}:")
-    time_steps = 0
 
     while not done:
-        env.render()
-        action = np.argmax(q_table[state, :])
-        state, reward, done, _, info = env.step(action)
-        state = int(state)  # Updated line
-        time_steps += 1
+        action = np.argmax(q_table[char(state)])
 
-    env.render()
-    print(f"Number of steps: {time_steps}\n")
+        state, reward, done, info = env.step(action)
+
+        if done:
+            if reward == 1:
+                successes += 1
+
+success_rate = successes / num_test_episodes
+print(f"Success rate: {success_rate}")
