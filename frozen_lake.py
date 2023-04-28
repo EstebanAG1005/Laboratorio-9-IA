@@ -1,57 +1,104 @@
-import numpy as np
+import matplotlib.pyplot as plt
 import gym
-from gymnasium.envs.toy_text.frozen_lake import generate_random_map
+import random
+import numpy as np
 
-# Create the FrozenLake environment
-env = gym.make('FrozenLake-v1', desc=generate_random_map(size=8), is_slippery=True)
+# Initialize the slippery Frozen Lake
+environment = gym.make("FrozenLake-v1", is_slippery=True)
+environment.reset()
 
-# Initialize the Q-table
-q_table = np.zeros([env.observation_space.n, env.action_space.n])
+# We re-initialize the Q-table
+qtable = np.zeros((environment.observation_space.n, environment.action_space.n))
 
 # Hyperparameters
-alpha = 0.1  # Learning rate
-gamma = 0.99  # Discount factor
-epsilon = 0.1  # Exploration rate
-num_episodes = 10000
+episodes = 1000        # Total number of episodes
+alpha = 0.5            # Learning rate
+gamma = 0.9            # Discount factor
+epsilon = 1.0          # Amount of randomness in the action selection
+epsilon_decay = 0.001  # Fixed amount to decrease
 
-for episode in range(num_episodes):
-    state = env.reset()
+# List of outcomes to plot
+outcomes = []
+
+print('Q-table before training:')
+print(qtable)
+
+# Training
+for _ in range(episodes):
+    state = environment.reset()
     done = False
 
+    # By default, we consider our outcome to be a failure
+    outcomes.append("Failure")
+    
+    # Until the agent gets stuck in a hole or reaches the goal, keep training it
     while not done:
-        # Choose action: epsilon-greedy
-        if np.random.uniform(0, 1) < epsilon:
-            action = env.action_space.sample()
+        # Generate a random number between 0 and 1
+        rnd = np.random.random()
+
+        # If random number < epsilon, take a random action
+        if rnd < epsilon:
+          action = environment.action_space.sample()
+        # Else, take the action with the highest value in the current state
         else:
-            action = np.argmax(q_table[int(state)])
+          action = np.argmax(qtable[int(state)])
+             
+        # Implement this action and move the agent in the desired direction
+        new_state, reward, done, _, info = environment.step(action)
 
+        # Update Q(s,a)
+        state_str = str(state)
+        state_idx = hash(state_str)
+        new_state_str = str(new_state)
+        new_state_idx = hash(new_state_str)
+        qtable[state_idx, action] = qtable[state_idx, action] + \
+                                        alpha * (reward + gamma * np.max(qtable[new_state_idx]) - qtable[state_idx, action])
 
-        # Take the action
-        next_state, reward, done, info = env.step(action)
+        
+        # Update our current state
+        state = new_state
 
-        # Update the Q-table
-        q_value = q_table[state, action]
-        next_q_value = np.max(q_table[next_state])
-        new_q_value = q_value + alpha * (reward + gamma * next_q_value - q_value)
-        q_table[state, action] = new_q_value
+        # If we have a reward, it means that our outcome is a success
+        if reward:
+          outcomes[-1] = "Success"
 
-        state = next_state
+    # Update epsilon
+    epsilon = max(epsilon - epsilon_decay, 0)
 
-# Test the learned policy
-num_test_episodes = 100
-successes = 0
-for episode in range(num_test_episodes):
-    state = env.reset()
+print()
+print('===========================================')
+print('Q-table after training:')
+print(qtable)
+
+# Plot outcomes
+plt.figure(figsize=(12, 5))
+plt.xlabel("Run number")
+plt.ylabel("Outcome")
+ax = plt.gca()
+plt.bar(range(len(outcomes)), outcomes, width=1.0)
+plt.show()
+
+episodes = 100
+nb_success = 0
+
+# Evaluation
+for _ in range(100):
+    state = environment.reset()
     done = False
-
+    
+    # Until the agent gets stuck or reaches the goal, keep training it
     while not done:
-        action = np.argmax(q_table[char(state)])
+        # Choose the action with the highest value in the current state
+        action = np.argmax(qtable[int(state)])
 
-        state, reward, done, info = env.step(action)
+        # Implement this action and move the agent in the desired direction
+        new_state, reward, done, info = environment.step(action)
 
-        if done:
-            if reward == 1:
-                successes += 1
+        # Update our current state
+        state = new_state
 
-success_rate = successes / num_test_episodes
-print(f"Success rate: {success_rate}")
+        # When we get a reward, it means we solved the game
+        nb_success += reward
+
+# Let's check our success rate!
+print (f"Success rate = {nb_success/episodes*100}%")
