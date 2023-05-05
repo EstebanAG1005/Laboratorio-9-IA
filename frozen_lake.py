@@ -23,9 +23,11 @@ def reset_environment_and_update_wins(env, reward, wins, iterationInfo, cantIter
 # Hyperparameters
 alpha = 0.1
 gamma = 0.99
-epsilon = 0.1
-training_episodes = 20000
-testing_episodes = 300
+epsilon = 1.0
+min_epsilon = 0.01
+epsilon_decay = 0.999
+training_episodes = 100
+testing_episodes = 20
 
 # Creating the Frozen Lake environment
 desc = generate_random_map(size=4)
@@ -47,10 +49,18 @@ for episode in range(training_episodes):
             action = np.argmax(q_table[state, :])
 
         next_state, reward, done, _, _ = env.step(action)
+        modified_reward = (
+            reward - 0.01
+        )  # Penalize each step to encourage faster completion
+
         q_table[state, action] += alpha * (
-            reward + gamma * np.max(q_table[next_state, :]) - q_table[state, action]
+            modified_reward
+            + gamma * np.max(q_table[next_state, :])
+            - q_table[state, action]
         )
         state = next_state
+
+    epsilon = max(min_epsilon, epsilon * epsilon_decay)  # Decay epsilon
 
 # Testing the trained agent
 wins = 0
@@ -79,7 +89,7 @@ for episode in range(testing_episodes):
                 iterationInfo,
                 cantIterations,
             ) = reset_environment_and_update_wins(
-                env, reward, wins, iterationInfo, cantIterations  # Pass 'reward' here
+                env, reward, wins, iterationInfo, cantIterations
             )
             break
 
