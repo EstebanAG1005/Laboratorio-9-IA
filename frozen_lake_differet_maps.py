@@ -3,7 +3,6 @@ import gymnasium as gym
 from gymnasium.envs.toy_text.frozen_lake import generate_random_map
 import time
 
-
 def reset_environment_and_update_wins(env, reward, wins, iterationInfo, cantIterations):
     if reward == 1:
         print("Win\n")
@@ -19,15 +18,15 @@ def reset_environment_and_update_wins(env, reward, wins, iterationInfo, cantIter
 
     return env, wins, iterationInfo, cantIterations
 
-
 # Hyperparameters
 alpha = 0.1
 gamma = 0.99
 epsilon = 1.0
 min_epsilon = 0.01
 epsilon_decay = 0.999
-training_episodes = 20000
+training_episodes = 10000
 testing_episodes = 300
+change_map_every = 1000
 
 # Creating the Frozen Lake environment
 desc = generate_random_map(size=4)
@@ -39,6 +38,10 @@ q_table = np.zeros((env.observation_space.n, env.action_space.n))
 
 # Training the agent
 for episode in range(training_episodes):
+    if episode % change_map_every == 0:
+        desc = generate_random_map(size=4)
+        env = gym.make("FrozenLake-v1", render_mode="human", desc=desc, is_slippery=True)
+
     state = env.reset()[0]
     done = False
 
@@ -62,6 +65,7 @@ for episode in range(training_episodes):
 
     epsilon = max(min_epsilon, epsilon * epsilon_decay)  # Decay epsilon
 
+    # Print progress
     print(f"Training progress: Episode {episode + 1} of {training_episodes}")
 
 # Testing the trained agent
