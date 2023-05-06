@@ -28,7 +28,7 @@ min_epsilon = 0.01
 epsilon_decay = 0.999
 training_episodes = 20000
 testing_episodes = 300
-change_map_every = 200
+change_map_every = 2000
 
 # Creating the Frozen Lake environment
 desc = generate_random_map(size=4)
