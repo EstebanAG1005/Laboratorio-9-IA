@@ -3,6 +3,7 @@ import gymnasium as gym
 from gymnasium.envs.toy_text.frozen_lake import generate_random_map
 import time
 
+
 def reset_environment_and_update_wins(env, reward, wins, iterationInfo, cantIterations):
     if reward == 1:
         print("Win\n")
@@ -18,6 +19,7 @@ def reset_environment_and_update_wins(env, reward, wins, iterationInfo, cantIter
 
     return env, wins, iterationInfo, cantIterations
 
+
 # Hyperparameters
 alpha = 0.1
 gamma = 0.99
@@ -26,7 +28,7 @@ min_epsilon = 0.01
 epsilon_decay = 0.999
 training_episodes = 10000
 testing_episodes = 300
-change_map_every = 1000
+change_map_every = 200
 
 # Creating the Frozen Lake environment
 desc = generate_random_map(size=4)
@@ -40,7 +42,9 @@ q_table = np.zeros((env.observation_space.n, env.action_space.n))
 for episode in range(training_episodes):
     if episode % change_map_every == 0:
         desc = generate_random_map(size=4)
-        env = gym.make("FrozenLake-v1", render_mode="human", desc=desc, is_slippery=True)
+        env = gym.make(
+            "FrozenLake-v1", render_mode="human", desc=desc, is_slippery=True
+        )
 
     state = env.reset()[0]
     done = False
@@ -52,9 +56,12 @@ for episode in range(training_episodes):
             action = np.argmax(q_table[state, :])
 
         next_state, reward, done, _, _ = env.step(action)
-        modified_reward = (
-            reward - 0.01
-        )  # Penalize each step to encourage faster completion
+
+        # Update the modified_reward calculation
+        if done and reward == 0:
+            modified_reward = -1
+        else:
+            modified_reward = reward - 0.01
 
         q_table[state, action] += alpha * (
             modified_reward
