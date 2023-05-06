@@ -49,9 +49,12 @@ for episode in range(training_episodes):
             action = np.argmax(q_table[state, :])
 
         next_state, reward, done, _, _ = env.step(action)
-        modified_reward = (
-            reward - 0.01
-        )  # Penalize each step to encourage faster completion
+
+        # Update the modified_reward calculation
+        if done and reward == 0:
+            modified_reward = -1
+        else:
+            modified_reward = reward - 0.01
 
         q_table[state, action] += alpha * (
             modified_reward
