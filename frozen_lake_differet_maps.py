@@ -26,7 +26,7 @@ gamma = 0.99
 epsilon = 1.0
 min_epsilon = 0.01
 epsilon_decay = 0.999
-training_episodes = 10000
+training_episodes = 20000
 testing_episodes = 300
 change_map_every = 200
 
