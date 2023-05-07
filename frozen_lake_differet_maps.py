@@ -28,7 +28,7 @@ min_epsilon = 0.01
 epsilon_decay = 0.999
 training_episodes = 20000
 testing_episodes = 300
-change_map_every = 2000
+change_map_every = 1000
 
 # Creating the Frozen Lake environment
 desc = generate_random_map(size=4)
@@ -59,7 +59,7 @@ for episode in range(training_episodes):
 
         # Update the modified_reward calculation
         if done and reward == 0:
-            modified_reward = -1
+            modified_reward = -0.5
         else:
             modified_reward = reward - 0.01
 

@@ -10,10 +10,6 @@ def reset_environment_and_update_wins(env, reward, wins, iterationInfo, cantIter
         wins += 1
         iterationInfo.append(cantIterations)
         cantIterations = 0
-        desc = generate_random_map(size=4)
-        env = gym.make(
-            "FrozenLake-v1", render_mode="human", desc=desc, is_slippery=True
-        )
     else:
         print("Game Over\n")
 
@@ -52,7 +48,7 @@ for episode in range(training_episodes):
 
         # Update the modified_reward calculation
         if done and reward == 0:
-            modified_reward = -1
+            modified_reward = -0.5
         else:
             modified_reward = reward - 0.01
 
